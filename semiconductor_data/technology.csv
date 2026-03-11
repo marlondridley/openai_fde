@@ -1,0 +1,4 @@
+tech_id,tech_name,category,node_nm,transistor_type,process_technologies,material
+N22,22nm,Logic,22,FinFET,"HKMG, Immersion Lithography, 193nm Multi‑patterning",Si
+N14,14nm,Logic,14,FinFET,"HKMG, 2nd Gen FinFET, 193nm Multi‑patterning",Si
+N10,10nm,Logic,10,FinFET,"HKMG, 3rd Gen FinFET, 193nm Multi‑patterning, Co-based Interconnects",Si

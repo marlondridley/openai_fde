@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security incident or sensitive data exposure
+    url: mailto:security@marlondridley.com
+    about: Please email the security contact instead of filing a public issue.

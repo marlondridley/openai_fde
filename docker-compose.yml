@@ -1,0 +1,61 @@
+version: "3.9"
+
+x-demo-base: &demo-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: ai-demo:latest
+  working_dir: /app
+  env_file:
+    - .env
+  environment:
+    PYTHONPATH: /app
+  volumes:
+    - .:/app
+  tty: true
+  stdin_open: true
+
+services:
+  demo-mock:
+    <<: *demo-base
+    container_name: ai-demo-mock
+    command: python run_all.py --mock
+    depends_on:
+      - semiconductor-db
+
+  demo-live:
+    <<: *demo-base
+    container_name: ai-demo-live
+    command: python run_all.py --live
+    depends_on:
+      - semiconductor-db
+    profiles: ["live"]
+
+  dashboard:
+    <<: *demo-base
+    container_name: ai-demo-dashboard
+    command: streamlit run dashboard.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    depends_on:
+      - semiconductor-db
+    profiles: ["dashboard"]
+
+  semiconductor-db:
+    image: postgres:15
+    container_name: semiconductor-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${PGDATABASE:-semiconductor}
+      POSTGRES_USER: ${PGUSER:-demo_admin}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./semiconductor_data:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  pg_data:

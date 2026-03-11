@@ -1,0 +1,7 @@
+tool_id,tool_name,tool_type,fab_id,qualification_status
+T001,ASML NXT:2000i,Immersion Scanner,AZ_F12,Qualified
+T002,ASML NXT:2000i,Immersion Scanner,AZ_F22,Qualified
+T003,ASML NXT:2050i,Immersion Scanner,AZ_F32,Qualified
+T004,ASML NXT:2000i,Immersion Scanner,IE_F24,Qualified
+T005,Lam Kiyo,Conductor Etch,AZ_F12,Qualified
+T006,AMAT Producer,Dielectric Etch,AZ_F32,Qualified

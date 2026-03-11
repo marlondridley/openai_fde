@@ -1,0 +1,55 @@
+name: Eval Gate (Live Deploy)
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  live-eval:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run demo suite (live)
+        id: run-live
+        run: |
+          set -o pipefail
+          python demo/run_all.py --live | tee run-live.log
+        shell: bash
+        continue-on-error: true
+
+      - name: Upload live log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-demo-log
+          path: run-live.log
+
+      - name: Fail if gates failed
+        if: steps.run-live.outcome == 'failure'
+        run: |
+          echo 'Live evaluation failed. Deployment blocked.'
+          exit 1
+        shell: bash
+
+      - name: Deploy (only if gates passed)
+        if: success()
+        run: |
+          bash scripts/deploy.sh
+        shell: bash

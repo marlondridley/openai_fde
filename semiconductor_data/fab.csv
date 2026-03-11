@@ -1,0 +1,15 @@
+fab_id,name,location,owner,status,start_year,business_model,clean_room_size_sqm,total_wafer_starts_per_month,site_type
+AZ_F12,Fab 12,"Chandler, Arizona, USA",Intel,Operational,1996,IDM,15000,45000,Front-End
+AZ_F22,Fab 22,"Chandler, Arizona, USA",Intel,Operational,2000,IDM,18000,50000,Front-End
+AZ_F32,Fab 32,"Chandler, Arizona, USA",Intel,Operational,2007,IDM,20000,55000,Front-End
+IE_F24,Fab 24,"Leixlip, Ireland",Intel,Operational,2005,IDM,16000,48000,Front-End
+IL_F28,Fab 28,"Kiryat Gat, Israel",Intel,Operational,2008,IDM,17000,50000,Front-End
+IL_F28a,Fab 28a,"Kiryat Gat, Israel",Intel,Operational,2012,IDM,17000,50000,Front-End
+IL_F38,Fab 38,"Kiryat Gat, Israel",Intel,Operational,2014,IDM,20000,60000,Front-End
+OR_D1x,D1X Development Fab,"Hillsboro, Oregon, USA",Intel,R&D,2013,IDM,25000,20000,R&D Front-End
+CN_SH,"Shanghai Assembly/Test","Shanghai, China",Intel,Operational,2002,IDM,,,Back-End
+CN_CD,"Chengdu Assembly/Test","Chengdu, China",Intel,Operational,2005,IDM,,,Back-End
+CR_SJ,"San Jose Assembly/Test","San Jose, Costa Rica",Intel,Operational,1998,IDM,,,Back-End
+MY_KUL,"Kulim Assembly/Test","Kulim, Malaysia",Intel,Operational,1995,IDM,,,Back-End
+MY_PG,"Penang Assembly/Test","Penang, Malaysia",Intel,Operational,1972,IDM,,,Back-End
+VN_HCM,"Ho Chi Minh City Assembly/Test","Ho Chi Minh City, Vietnam",Intel,Operational,2010,IDM,,,Back-End

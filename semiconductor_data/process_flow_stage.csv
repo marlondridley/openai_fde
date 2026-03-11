@@ -1,0 +1,9 @@
+stage_id,stage_name,description,site_type,typical_location
+S01,Ingot Growth,"Silicon crystal pulled from melt",Supplier,External
+S02,"Wafer Slicing/Polishing","Ingot sliced into wafers, polished",Supplier,External
+S03,Front-End Fabrication,"Transistor & interconnect build (22/14/10nm)",Front-End,"AZ, IE, IL, OR"
+S04,"Wafer Sort / Probe","Electrical test of each die on wafer",Front-End,"AZ, IE, IL, OR"
+S05,Dicing,"Wafer cut into individual die",Back-End,"CN, CR, MY, VN"
+S06,Package Assembly,"Die attached to substrate, encapsulated",Back-End,"CN, CR, MY, VN"
+S07,"Final Test & Binning","Functional, speed, power tests; binning",Back-End,"CN, CR, MY, VN, US Assembly/Test"
+S08,Shipment,"Packaged processors sent to customers",Distribution,Global

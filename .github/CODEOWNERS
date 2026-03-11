@@ -1,0 +1,8 @@
+# Default owners
+*       @marlondridley
+
+# Demo code and shared utils
+/demo/  @marlondridley
+/eval_gates.py  @marlondridley
+/docker-compose.yml @marlondridley
+/.github/workflows/ @marlondridley
