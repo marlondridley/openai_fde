@@ -1,0 +1,14 @@
+fab_id,tech_id,wafer_size_mm,status
+AZ_F12,N22,300,Qualified
+AZ_F12,N14,300,Qualified
+AZ_F22,N22,300,Qualified
+AZ_F22,N14,300,Qualified
+AZ_F32,N14,300,Qualified
+AZ_F32,N10,300,Qualified
+IE_F24,N14,300,Qualified
+IL_F28,N22,300,Qualified
+IL_F28a,N14,300,Qualified
+IL_F38,N10,300,Qualified
+OR_D1x,N22,300,Development
+OR_D1x,N14,300,Development
+OR_D1x,N10,300,Development

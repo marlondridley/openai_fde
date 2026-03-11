@@ -1,0 +1,5 @@
+constraint_id,constraint_type,description,rule,affected_fab_id,affected_tech_id
+C001,Export Control,"US export restrictions on advanced nodes","Fabs in China cannot receive 10nm or below masks/recipes",,N10
+C002,Tool Qualification,"Immersion scanner must be requalified annually","Qualification expires after 12 months",,
+C003,WIP Limit,"Max work in progress to avoid congestion","WIP for N10 at Fab 32 cannot exceed 300 wafers",AZ_F32,N10
+C004,Lot Release,"Lots with yield < 85% require engineering review","If yield_pct < 85, lot_status must be 'On Hold'",,

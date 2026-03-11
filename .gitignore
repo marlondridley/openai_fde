@@ -1,0 +1,58 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+.env.*
+.python-version
+
+# Packaging / distribution artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+MANIFEST
+pip-wheel-metadata/
+
+# Test / coverage tooling
+.pytest_cache/
+.coverage
+.coverage.*
+hypothesis/
+.hypothesis/
+.tox/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Notebooks / caches
+.ipynb_checkpoints/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.code-workspace
+*.suo
+*.user
+*.swp
+
+# Logs / temp
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker / compose local state
+tmp/
+*.pid
+

@@ -1,0 +1,20 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+.env
+.env.*
+.envrc
+
+.git/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local assets not needed in container image
+mermaid-diagram.png
+semiconductor_data/
+postgres_data/
+
