@@ -1,257 +1,168 @@
-# AI Deployment Engineer — Live Demo Codebase
+# OpenAI FDE Demo: Governance + AI Decision Dashboard
 
-Complete, runnable demo for every section of the World-Class Model Behaviour portfolio.
-Each demo runs independently. Every script that calls the OpenAI API has a `--mock` flag
-so you can run it without spending credits during a recruiter screen.
+This repository demonstrates two connected planes for enterprise AI operations:
 
-## Quick Start
+1. Deployment governance (evals, gates, security, cost, reliability).
+2. Runtime AI decision surface (Streamlit dashboard + Postgres + external signals + agent telemetry).
 
-```bash
-# 1. Clone / copy this project
-cd ai_de_demo
+The goal is to show clients both how AI decisions are made and how those decisions are governed before and after deployment.
 
-# 2. Install dependencies
+## Current State (What Works Now)
+
+- Root-level demo scripts (`01` to `09`) run in mock or live mode.
+- `run_all.py` executes the suite from the repository root.
+- Streamlit dashboard connects to Postgres (`PG*` env vars) and external macro/logistics/FX APIs.
+- Dashboard includes an AI Agent tab with decision logging and governance metadata.
+- GitHub Actions workflows run live eval gates on PR and on `main` push.
+
+## Repository Layout
+
+```text
+.
+├── 01_ci_cd.py
+├── 02_eval_pipeline.py
+├── 03_sft_dataset.py
+├── 04_rft_grader.py
+├── 05_reasoning_tradeoff.py
+├── 06_scaffolding.py
+├── 07_chaos_engineering.py
+├── 08_security_guardrails.py
+├── 09_cost_optimisation.py
+├── dashboard.py
+├── run_all.py
+├── eval_gates.py
+├── scripts/
+│   ├── seed_semiconductor_db.py
+│   └── deploy.sh
+├── semiconductor_data/
+├── docs/
+│   ├── STEP_BY_STEP_RUNBOOK.md
+│   └── openai_api_key.md
+└── .github/workflows/
+    ├── eval.yml
+    └── live_eval.yml
+```
+
+## Prerequisites
+
+- Python 3.11+
+- Docker Desktop (recommended for Postgres)
+- Git
+- Optional: GitHub CLI (`gh`) for PR and issue demos
+
+## Setup
+
+```powershell
+cd C:\Users\marlo\source\openai\demo_project\demo
+
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# 3. Set your API key (only needed for live runs)
-export OPENAI_API_KEY=sk-...
-
-# 4. Run ALL demos in sequence (mock mode — no API calls, no cost)
-python demo/run_all.py --mock
-
-# 5. Run a specific demo live (uses real API)
-python demo/run_all.py --part 3   # RFT grader + eval
+Copy-Item .env.example .env
+notepad .env
 ```
 
-## Git & GitHub Workflow
+Set at least:
 
-1. Create a short-lived branch such as `feat/reasoning-profile` off `main`.
-2. Run `python demo/run_all.py --mock` (and any targeted live runs) before pushing.
-3. Open an issue using the bug/feature templates, then link it in your PR description.
-4. Fill out `.github/pull_request_template.md`, tag CODEOWNERS, and wait for CI to finish before merging.
-5. Never commit secrets or `.env` values; store them in GitHub repo secrets for Actions workflows.
+- `PGHOST`
+- `PGPORT`
+- `PGDATABASE`
+- `PGUSER`
+- `PGPASSWORD`
 
-### Branch Strategy (Demo vs Production)
+Optional for live model calls:
 
-- `main` is the production-ready branch that always reflects the version you demo; branch protection should block direct pushes.
-- Use `demo/<topic>` branches for rapid storytelling tweaks (scripts, slides, speaker notes).
-- Use `hardening/<topic>` branches for infrastructure or production-grade improvements (CI, guardrails, data changes).
-- Keep demo and hardening work in separate PRs so each runbook (mock vs live) can be validated independently before merge.
+- `OPENAI_API_KEY`
 
-## OpenAI API Key Management
-
-- **Local:** `pip install python-dotenv`, copy `.env.example` to `.env`, and the demos will load it automatically via `demo/utils.py`.
-- **CI:** Store the same value as the `OPENAI_API_KEY` repository secret in GitHub Actions—never print it in logs.
-- **Docker:** Pass the key at runtime with `--env-file .env` or forwarded env vars so it never lands in images/compose files.
-
-See `docs/openai_api_key.md` for the step-by-step guide covering local, GitHub Actions, and Docker workflows.
-
-- **Database:** `dashboard.py` reads `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and `PGPASSWORD` from the environment. Populate them in `.env` (see `.env.example`) so the Streamlit app talks to Postgres without hardcoding credentials.
-
-## Docker Workflow (Windows PowerShell)
-
-Run all commands from the repo root in PowerShell while Docker Desktop is running.
+## Start Database and Seed Data
 
 ```powershell
-# 1. Build / rebuild the Python 3.11 image
-docker compose build
-
-# 2. Run the full suite in mock mode (no API calls)
-docker compose --env-file .env run --rm demo-mock
-
-# 3. Run the suite live (requires OPENAI_API_KEY in .env)
-docker compose --env-file .env run --rm demo-live
-
-# 4. Exec into the running container for debugging
-# (swap demo-mock for demo-live if needed)
-docker compose exec demo-mock pwsh
-
-# 5. Stop containers when done
-docker compose down
+docker compose up -d semiconductor-db
+python scripts\seed_semiconductor_db.py
 ```
 
-### Postgres + Streamlit dashboard
+## Run Demo Suite
+
+Mock mode (no OpenAI usage):
 
 ```powershell
-# Start Postgres + dashboard (Ctrl+C to stop when done)
+python run_all.py --mock
+```
+
+Live mode (uses real API + key):
+
+```powershell
+python run_all.py --live
+```
+
+Single section:
+
+```powershell
+python run_all.py --part 6 --mock
+```
+
+## Launch Dashboard
+
+Local:
+
+```powershell
+streamlit run dashboard.py
+```
+
+Docker profile:
+
+```powershell
 docker compose --profile dashboard up dashboard
-
-# Or bring up the whole stack in the background
-docker compose up -d semiconductor-db
-
-# Tail the dashboard logs
-docker compose logs -f dashboard
 ```
 
-The dashboard reads your environment variables, so the database connection string never lives in the image. Update `.env` once and both the demo and Streamlit services inherit the credentials via Compose.
+## Dashboard Agent + Telemetry
 
-### Seed the semiconductor dataset
+The dashboard writes runtime AI traces to Postgres for auditability and governance.
 
-```powershell
-# Ensure the DB container is running
-docker compose up -d semiconductor-db
+Key tables:
 
-# Load CSVs from semiconductor_data/ into Postgres
-docker compose run --rm demo-mock python scripts/seed_semiconductor_db.py
-```
+- `agent_session`
+- `agent_message`
+- `agent_tool_call`
+- `agent_decision`
+- `agent_decision_review`
+- `agent_decision_outcome`
+- `agent_model_registry`
 
-The seed script creates the tables (if missing), truncates them, and bulk-loads the CSVs so every rehearsal starts with the same data. Because it reads PG* env vars, no credentials are embedded in the script or images.
+This supports explainability, review actions, and cost/latency/quality monitoring in production.
 
-## Demo Readiness Playbook
+## GitHub Workflow Behavior
 
-### One-command Docker runs
+- `.github/workflows/eval.yml`
+  - Trigger: Pull requests to `main`
+  - Runs: `python run_all.py --live`
+  - Outcome: PR gate pass/fail with run log artifact and PR comment summary
 
-```powershell
-# Mock (safe for rehearsals)
-docker compose --env-file .env run --rm demo-mock
+- `.github/workflows/live_eval.yml`
+  - Trigger: Push to `main`
+  - Runs: `python run_all.py --live`
+  - On pass: executes `scripts/deploy.sh`
+  - On fail: blocks deploy
 
-# Live (real API usage)
-docker compose --env-file .env run --rm demo-live
-```
+## Demo Narrative (Client-Facing)
 
-### Reset the workspace before a demo
+Use the repo to show both planes in one flow:
 
-```bash
-bash demo_reset.sh
-```
+1. Open a PR and let eval gates run (governance before merge).
+2. Merge and show deploy workflow outcome (governance at release).
+3. Open dashboard AI Agent tab and make routing decisions (runtime intelligence).
+4. Query telemetry tables to prove traceability and monitoring (post-deploy governance).
 
-The script clears `__pycache__`, local test artifacts, leftover `run*.log`, and brings down any Compose stack so every rehearsal starts from a known-good state.
+## Full Runbook
 
-### 10-minute pre-demo checklist
+Use the full step-by-step guide for setup, PR flow, and operations:
 
-- `git status -sb` is clean and you are on the branch you plan to present.
-- `python -c "import os; print(os.environ.get('OPENAI_API_KEY','missing'))"` returns a key (no `missing`).
-- `python demo/run_all.py --mock` (or the Docker equivalent) finishes without regressions.
-- `docker compose --env-file .env run --rm demo-live --part 1` validates the live path and API connectivity quickly.
-- `docker info` shows Docker Desktop running—restart it if Compose errors.
-- Silence notifications, confirm screen sharing, and keep backup slides handy in case the API is degraded.
+- `docs/STEP_BY_STEP_RUNBOOK.md`
 
----
+## Troubleshooting
 
-## Demo Map — What to Show and When
-
-| Demo | File | What it shows | Duration | Mock? |
-|---|---|---------|-------|----|
-| **PART 1** | `demo/01_ci_cd.py` | Regression gate: eval → compare → gate pass/fail | 45 sec | ✅ |
-| **PART 2** | `demo/02_eval_pipeline.py` | Golden dataset eval + LLM judge scoring | 60 sec | ✅ |
-| **PART 3** | `demo/03_sft_dataset.py` | SFT data quality filter + PII scrub gate | 30 sec | ✅ |
-| **PART 4** | `demo/04_rft_grader.py` | RFT grader: gradable vs subjective task demo | 60 sec | ✅ |
-| **PART 5** | `demo/05_reasoning_tradeoff.py` | Reasoning budget profiles: latency vs quality | 90 sec | ✅ |
-| **PART 6** | `demo/06_scaffolding.py` | Agent + connectors: 3 tools, full loop | 60 sec | ✅ |
-| **PART 7** | `demo/07_chaos_engineering.py` | Failure injection: 8 faults, measure recovery | 45 sec | ✅ |
-| **PART 8** | `demo/08_security_guardrails.py` | 4-layer guardrail: 20 red team attacks | 45 sec | ✅ |
-| **BONUS** | `demo/09_cost_optimisation.py` | Semantic cache + model tiering ROI | 30 sec | ✅ |
-
----
-
-## Project Structure
-
-```
-ai_de_demo/
-├── demo/                        ← RUNNABLE DEMO SCRIPTS (start here)
-│   ├── run_all.py               ← master runner: runs all demos in order
-│   ├── 01_ci_cd.py              ← CI/CD regression gate simulation
-│   ├── 02_eval_pipeline.py      ← golden dataset eval + LLM judge
-│   ├── 03_sft_dataset.py        ← SFT data prep + quality filter
-│   ├── 04_rft_grader.py         ← RFT grader design + gradability test
-│   ├── 05_reasoning_tradeoff.py ← reasoning budget comparison
-│   ├── 06_scaffolding.py        ← agent + tool registry demo
-│   ├── 07_chaos_engineering.py  ← fault injection + recovery
-│   ├── 08_security_guardrails.py← 4-layer guardrail + red team
-│   └── 09_cost_optimisation.py  ← caching + tiering ROI
-│
-├── evals/
-│   ├── golden_dataset.jsonl     ← 10 eval cases across 5 categories
-│   ├── baseline_scores.json     ← persisted baseline
-│   ├── run_eval.py              ← core eval runner
-│   └── regression_compare.py   ← baseline diff
-│
-├── graders/
-│   ├── rft_grader.py            ← RuleBasedGrader + LLMGrader + HybridGrader
-│   └── grader_test_cases.jsonl  ← 5 grader validation cases
-│
-├── sft/
-│   ├── sft_pipeline.py          ← upload → train → poll → A/B eval
-│   └── training_data_sample.jsonl← 5 sample SFT training examples
-│
-├── rft/
-│   └── rft_pipeline.py          ← task design + grader + RL loop
-│
-├── scaffolding/
-│   └── agent_infrastructure.py  ← connectors + registry + agent
-│
-├── datasets/
-│   ├── sft_training.jsonl       ← 10 SFT training examples
-│   └── rft_tasks.jsonl          ← 5 RFT gradable tasks
-│
-├── .github/workflows/
-│   ├── regression_gate.yml      ← main CI/CD pipeline
-│   ├── sft_pipeline.yml         ← SFT trigger
-│   └── rft_pipeline.yml         ← RFT trigger
-│
-├── requirements.txt
-└── README.md                    ← this file
-```
-
----
-
-## What Each Demo Proves (Recruiter Talking Points)
-
-### Demo 1 — CI/CD Regression Gate
-**Shows:** The pipeline that prevents silent quality regressions.
-**Say:** "Every system prompt change runs this gate. Safety check first — if it fails, nothing else runs. I've caught 4 regressions this way. The pipeline costs $2/month."
-
-### Demo 2 — Eval Pipeline
-**Shows:** LLM-as-judge scoring, composite scoring, per-category breakdown.
-**Say:** "The eval suite runs on every PR. The judge model is gpt-4o-mini — cheap, fast, consistent enough for CI. I validate it against human labels quarterly."
-
-### Demo 3 — SFT Dataset Quality
-**Shows:** Auto-quality-filter rejecting low-quality training examples + PII scrub.
-**Say:** "50 excellent examples beat 500 mediocre ones. The quality filter ensures we only train on examples that score 4.0+ from the judge. Saved a healthcare customer from training on 612 examples that would have baked in inconsistent clinical tone."
-
-### Demo 4 — RFT Grader
-**Shows:** Gradable vs subjective task comparison, grader consistency validation.
-**Say:** "The grader IS the reward signal. A grader with CV > 10% trains the model on noise. I validate every grader for consistency before a single training step runs."
-
-### Demo 5 — Reasoning Tradeoff
-**Shows:** Three reasoning profiles, latency vs quality measurement.
-**Say:** "The most important deployment decision for o-series models isn't the model — it's how long you let it think. I map every use case to a reasoning profile before the first API call."
-
-### Demo 6 — Scaffolding Agent
-**Shows:** ConnectorRegistry, 3 tools, full agentic loop with tool calls logged.
-**Say:** "The model is the engine. Scaffolding is the car. Every connector is standardised — adding a new enterprise system is 50 lines of Python. Every tool call is logged for compliance audit."
-
-### Demo 7 — Chaos Engineering
-**Shows:** 8 fault types injected, recovery times measured, DLQ for failed requests.
-**Say:** "I ran chaos experiments on every production system before go-live. This demo shows EXP-02 (rate limit) recovering in under 8 seconds with exponential backoff. The board meeting story is Demo 7."
-
-### Demo 8 — Security Guardrails
-**Shows:** 4-layer defense, 20 red team attacks, 0 successful injections.
-**Say:** "Two-layer input check — regex for speed, LLM classifier for novel attacks. Output validator catches system prompt leaks. The CISO loved the threat model document. This blocked 100% of red team attacks."
-
-### Demo 9 — Cost Optimisation
-**Shows:** Semantic cache hit rate, model tiering ROI calculation.
-**Say:** "$18K to $4K/month. Semantic cache at 0.92 threshold, model tiering sending routine tasks to mini, Batch API for async jobs. Same quality, 78% less cost."
-
----
-
-## Running Live vs Mock
-
-```bash
-# Mock mode: all API calls return realistic synthetic data — no cost, instant
-python demo/01_ci_cd.py --mock
-
-# Live mode: real OpenAI API calls (costs ~$0.01-0.05 per demo script)
-python demo/01_ci_cd.py --live
-
-# Live mode with specific model
-python demo/02_eval_pipeline.py --live --model gpt-4o-mini
-```
-#   o p e n a i _ f d e 
- 
- 
-
-
-
-
-
+- Missing `PG*` env vars: dashboard and seed script will fail DB connection.
+- Missing `OPENAI_API_KEY`: live runs will fail; use `--mock` for rehearsals.
+- Empty dashboard tables: run `python scripts\seed_semiconductor_db.py`.
+- API outage: dashboard has fallback behavior for macro/logistics/FX surfaces.

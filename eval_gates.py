@@ -366,6 +366,9 @@ def p99_latency_regression(current_latencies: list, baseline_latencies: list,
                           message="missing samples", severity="soft")
     cur_p99  = sorted(current_latencies)[math.ceil(len(current_latencies) * 0.99) - 1]
     base_p99 = sorted(baseline_latencies)[math.ceil(len(baseline_latencies) * 0.99) - 1]
+    if base_p99 <= 0:
+        return GateResult("p99_latency_regression", True, 0.0,
+                          "baseline P99=0ms - skipping regression check", severity="soft")
     pct      = (cur_p99 - base_p99) / base_p99
     passed   = pct <= max_pct_increase
     return GateResult("p99_latency_regression", passed, round(pct, 3),

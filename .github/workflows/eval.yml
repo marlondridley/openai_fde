@@ -1,4 +1,4 @@
-name: Eval Gate (Mock)
+name: Eval Gate (Live PR)
 
 on:
   pull_request:
@@ -9,8 +9,31 @@ permissions:
   pull-requests: write
 
 jobs:
-  mock-eval:
+  pr-live-eval:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: semiconductor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d semiconductor"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: semiconductor
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,25 +48,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run demo suite (mock)
+      - name: Validate OpenAI secret
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY is required for live PR evals."
+            exit 1
+          fi
+        shell: bash
+
+      - name: Seed Postgres
+        run: |
+          python scripts/seed_semiconductor_db.py
+        shell: bash
+
+      - name: Run full suite (live)
         id: run-demos
         run: |
           set -o pipefail
-          python demo/run_all.py --mock | tee run.log
+          python run_all.py --live | tee run.log
         shell: bash
         continue-on-error: true
 
-      - name: Upload demo log
+      - name: Upload run log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mock-demo-log
+          name: pr-live-eval-log
           path: run.log
 
       - name: Fail if gates failed
         if: steps.run-demos.outcome == 'failure'
         run: |
-          echo 'Regression gates failed. See summary comment for details.'
+          echo 'Live PR gate failed.'
           exit 1
         shell: bash
 
@@ -59,12 +95,18 @@ jobs:
             try {
               const log = fs.readFileSync('run.log', 'utf8');
               const lines = log.trim().split(/\r?\n/);
-              tail = lines.slice(-25).join('\n');
+              tail = lines.slice(-30).join('\n');
             } catch (err) {
               tail = 'log unavailable';
             }
             const status = process.env.GATE_STATUS === 'success' ? '✅ PASS' : '❌ FAIL';
-            const body = `### Mock Eval Summary\n**Result:** ${status}\n<details><summary>Last 25 lines</summary>\n\n\`\`\`\n${tail}\n\`\`\`\n\n</details>`;
+            const body = `### Live PR Eval Summary\n**Result:** ${status}\n<details><summary>Last 30 lines</summary>\n\n\
+\
+\
+${tail}\n\
+\
+\
+\n</details>`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,

@@ -3,12 +3,19 @@ demo/utils.py
 Shared utilities: mock API client, pretty printing, timing, result display.
 Every demo imports from here — keeps demo scripts clean and readable.
 """
-import sys, time, json, argparse, random
+import argparse
+import json
+import os
+import random
+import sys
+import time
 from dataclasses import dataclass
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
-# ── CLI ARGUMENT PARSING ──────────────────────────────────────────────────
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 try:
     from dotenv import load_dotenv
 except ImportError:
@@ -18,15 +25,17 @@ _ENV_LOADED = False
 
 
 def load_local_env() -> None:
-    """Load the project .env once if python-dotenv is available."""
+    """Load .env once if python-dotenv is available."""
     global _ENV_LOADED
     if _ENV_LOADED or load_dotenv is None:
         return
 
-    env_path = Path(__file__).resolve().parent.parent / ".env"
-    if env_path.exists():
-        load_dotenv(dotenv_path=env_path)
-        _ENV_LOADED = True
+    base = Path(__file__).resolve().parent
+    for env_path in (base / ".env", base.parent / ".env"):
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path)
+            _ENV_LOADED = True
+            break
 
 
 load_local_env()
@@ -42,6 +51,60 @@ def parse_demo_args(description="AI DE Demo"):
 
 def is_mock(args) -> bool:
     return args.mock
+
+
+DB_ENV_VARS = ("PGHOST", "PGPORT", "PGDATABASE", "PGUSER", "PGPASSWORD")
+
+
+def get_db_config(**overrides):
+    """Return DB config dict using env vars with optional overrides."""
+    cfg = {
+        "host": os.getenv("PGHOST", "localhost"),
+        "port": int(os.getenv("PGPORT", "5432")),
+        "dbname": os.getenv("PGDATABASE", "semiconductor"),
+        "user": os.getenv("PGUSER"),
+        "password": os.getenv("PGPASSWORD"),
+    }
+    for key, value in overrides.items():
+        if value is not None:
+            cfg[key] = value
+    return cfg
+
+
+def require_db_env() -> None:
+    missing = [key for key in DB_ENV_VARS if not os.getenv(key)]
+    if missing:
+        raise SystemExit(f"Missing environment variables: {', '.join(missing)}")
+
+
+def get_db_connection(*, autocommit: bool = False, **overrides):
+    """Return a psycopg2 connection using shared config helpers."""
+    require_db_env()
+    conn = psycopg2.connect(**get_db_config(**overrides))
+    conn.autocommit = autocommit
+    return conn
+
+
+def fetch_rows(sql: str, params: Optional[tuple] = None):
+    """Return all rows as dicts for convenience."""
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(sql, params)
+            return cur.fetchall()
+
+
+def fetch_one(sql: str, params: Optional[tuple] = None):
+    rows = fetch_rows(sql, params)
+    return rows[0] if rows else None
+
+
+def execute_sql(sql: str, params: Optional[tuple] = None) -> int:
+    """Execute a write query and return affected row count."""
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            conn.commit()
+            return cur.rowcount
 
 # ── PRETTY PRINT HELPERS ──────────────────────────────────────────────────
 DIVIDER  = "─" * 65

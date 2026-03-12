@@ -30,7 +30,7 @@ jobs:
         id: run-live
         run: |
           set -o pipefail
-          python demo/run_all.py --live | tee run-live.log
+          python run_all.py --live | tee run-live.log
         shell: bash
         continue-on-error: true
 
