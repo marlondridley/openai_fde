@@ -1,4 +1,12 @@
 tech_id,tech_name,category,node_nm,transistor_type,process_technologies,material
-N22,22nm,Logic,22,FinFET,"HKMG, Immersion Lithography, 193nm Multi‑patterning",Si
-N14,14nm,Logic,14,FinFET,"HKMG, 2nd Gen FinFET, 193nm Multi‑patterning",Si
-N10,10nm,Logic,10,FinFET,"HKMG, 3rd Gen FinFET, 193nm Multi‑patterning, Co-based Interconnects",Si
+N65,65nm,Logic/Memory,65,Planar,"193nm lithography, mature process integration",Si
+N45,45nm,Logic,45,Planar,"Immersion lithography, strained silicon",Si
+N32,32nm,Logic,32,Planar,"HKMG, immersion lithography",Si
+N22,22nm,Logic,22,FinFET,"HKMG, immersion lithography, multi-patterning",Si
+N14,14nm,Logic,14,FinFET,"2nd-gen FinFET, multi-patterning",Si
+N10,10nm,Logic,10,FinFET,"3rd-gen FinFET, advanced interconnect",Si
+N7,Intel 7 / 7nm-class,Logic,7,FinFET,EUV-assisted patterning,Si
+N4,Intel 4,Logic,4,FinFET,EUV high-volume manufacturing,Si
+N3,Intel 3,Logic,3,FinFET,Refined EUV process with higher density,Si
+N20A,Intel 20A,Logic,,RibbonFET,"RibbonFET, PowerVia, EUV",Si
+N18A,Intel 18A,Logic,,RibbonFET,"2nd-gen RibbonFET, PowerVia, EUV",Si

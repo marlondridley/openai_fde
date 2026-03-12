@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import csv
 import os
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List
@@ -64,6 +65,7 @@ TABLES: List[Dict] = [
             "process_technologies",
             "material",
         ],
+        "key_columns": ["tech_id"],
         "converters": {"node_nm": conv_int},
         "ddl": """
             CREATE TABLE IF NOT EXISTS technology (
@@ -92,6 +94,7 @@ TABLES: List[Dict] = [
             "total_wafer_starts_per_month",
             "site_type",
         ],
+        "key_columns": ["fab_id"],
         "converters": {
             "start_year": conv_int,
             "clean_room_size_sqm": conv_int,
@@ -116,6 +119,7 @@ TABLES: List[Dict] = [
         "name": "fab_capability",
         "file": "fab_capability.csv",
         "columns": ["fab_id", "tech_id", "wafer_size_mm", "status"],
+        "key_columns": ["fab_id", "tech_id"],
         "converters": {"wafer_size_mm": conv_int},
         "ddl": """
             CREATE TABLE IF NOT EXISTS fab_capability (
@@ -138,6 +142,7 @@ TABLES: List[Dict] = [
             "affected_fab_id",
             "affected_tech_id",
         ],
+        "key_columns": ["constraint_id"],
         "ddl": """
             CREATE TABLE IF NOT EXISTS operational_constraint (
                 constraint_id TEXT PRIMARY KEY,
@@ -159,6 +164,7 @@ TABLES: List[Dict] = [
             "site_type",
             "typical_location",
         ],
+        "key_columns": ["stage_id"],
         "ddl": """
             CREATE TABLE IF NOT EXISTS process_flow_stage (
                 stage_id TEXT PRIMARY KEY,
@@ -183,6 +189,7 @@ TABLES: List[Dict] = [
             "proc_node",
             "status",
         ],
+        "key_columns": ["lot_id"],
         "converters": {
             "start_date": conv_date,
             "wafers_started": conv_int,
@@ -206,6 +213,7 @@ TABLES: List[Dict] = [
         "name": "tool",
         "file": "tool.csv",
         "columns": ["tool_id", "tool_name", "tool_type", "fab_id", "qualification_status"],
+        "key_columns": ["tool_id"],
         "ddl": """
             CREATE TABLE IF NOT EXISTS tool (
                 tool_id TEXT PRIMARY KEY,
@@ -220,6 +228,7 @@ TABLES: List[Dict] = [
         "name": "tool_qualification",
         "file": "tool_qualification.csv",
         "columns": ["tool_id", "tech_id", "qualification_date", "expiry_date"],
+        "key_columns": ["tool_id", "tech_id"],
         "converters": {
             "qualification_date": conv_date,
             "expiry_date": conv_date,
@@ -240,6 +249,25 @@ TABLES: List[Dict] = [
 def ensure_tables(cur) -> None:
     for table in TABLES:
         cur.execute(table["ddl"])
+
+
+def _validate_no_duplicate_keys(table_cfg: Dict, rows: List[tuple]) -> None:
+    key_columns: List[str] = table_cfg.get("key_columns", [])
+    if not key_columns:
+        return
+
+    col_idx = {name: idx for idx, name in enumerate(table_cfg["columns"])}
+    key_positions = [col_idx[name] for name in key_columns]
+    key_values = [tuple(row[pos] for pos in key_positions) for row in rows]
+    counts = Counter(key_values)
+    dupes = [(k, c) for k, c in counts.items() if c > 1]
+    if not dupes:
+        return
+
+    sample = ", ".join(f"{k} x{c}" for k, c in dupes[:5])
+    raise ValueError(
+        f"Duplicate key rows in {table_cfg['file']} for key {key_columns}: {sample}"
+    )
 
 
 def load_table(cur, table_cfg) -> None:
@@ -263,6 +291,8 @@ def load_table(cur, table_cfg) -> None:
     if not rows:
         print(f"[warn] No rows found in {csv_path}")
         return
+
+    _validate_no_duplicate_keys(table_cfg, rows)
 
     cur.execute(f"TRUNCATE {table_cfg['name']} RESTART IDENTITY CASCADE")
     extras.execute_values(
