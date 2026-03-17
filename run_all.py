@@ -23,6 +23,7 @@ DEMOS = [
     ("7", "07_chaos_engineering.py", "Chaos Engineering + Fault Injection"),
     ("8", "08_security_guardrails.py", "4-Layer Guardrail + Red Team"),
     ("9", "09_cost_optimisation.py", "Semantic Cache + Cost ROI"),
+    ("10", "10_routing_eval.py", "Multi-hop Routing Eval Gate"),
 ]
 
 DIVIDER = "-" * 70

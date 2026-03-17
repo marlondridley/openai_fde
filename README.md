@@ -1,4 +1,4 @@
-# OpenAI FDE Demo: Governance + AI Decision Dashboard
+﻿# OpenAI FDE Demo: Governance + AI Decision Dashboard
 
 This repository demonstrates two connected planes for enterprise AI operations:
 
@@ -13,6 +13,7 @@ The goal is to show clients both how AI decisions are made and how those decisio
 - `run_all.py` executes the suite from the repository root.
 - Streamlit dashboard connects to Postgres (`PG*` env vars) and external macro/logistics/FX APIs.
 - Dashboard includes an AI Agent tab with decision logging and governance metadata.
+- AI Agent and Multi-Hop Router tabs both call the same routing engine (`plan_multihop_routes`) using lot-implied `flow_id`, risk tolerance, and scoring weights.
 - GitHub Actions workflows run live eval gates on PR and on `main` push.
 
 ## Repository Layout
@@ -28,7 +29,12 @@ The goal is to show clients both how AI decisions are made and how those decisio
 ├── 07_chaos_engineering.py
 ├── 08_security_guardrails.py
 ├── 09_cost_optimisation.py
+├── 10_routing_eval.py
+├── routing_engine.py
 ├── dashboard.py
+├── agents/
+│   ├── agent_multihop_default.py
+│   └── README.md
 ├── run_all.py
 ├── eval_gates.py
 ├── scripts/
@@ -75,12 +81,57 @@ Optional for live model calls:
 
 - `OPENAI_API_KEY`
 
+Optional routing defaults (used by Multi-Hop Router + AI Agent):
+
+- `ROUTING_DEFAULT_TOP_K` (default: `3`)
+- `ROUTING_DEFAULT_RISK_TOLERANCE` (default: `medium`; options: `low`, `medium`, `high`, `critical_only`)
+- `ROUTING_WEIGHT_TIME` (default: `0.35`)
+- `ROUTING_WEIGHT_COST` (default: `0.25`)
+- `ROUTING_WEIGHT_RISK` (default: `0.25`)
+- `ROUTING_WEIGHT_CAPACITY` (default: `0.15`)
+
+
 ## Start Database and Seed Data
 
 ```powershell
 docker compose up -d semiconductor-db
 python scripts\seed_semiconductor_db.py
 ```
+
+Stepwise (A-E) seed path for lock/debug isolation (the script supports `--step`):
+
+```powershell
+python scripts\seed_semiconductor_db.py --step a
+python scripts\seed_semiconductor_db.py --step b
+python scripts\seed_semiconductor_db.py --step c
+python scripts\seed_semiconductor_db.py --step d
+python scripts\seed_semiconductor_db.py --step e
+# aliases also supported: tables/core/capabilities/routing/lots/validate
+```
+
+## Risk + Flight Data (DB + API)
+
+Deterministic risk demo seed (conflict, Red Sea, PHX delay, sample flights):
+
+```powershell
+python scripts\seed_risk_demo_data.py
+```
+
+AviationStack ingestion (writes to `flight_status`):
+
+```powershell
+# one cycle
+python scripts\ingest_aviationstack.py --once
+
+# continuous polling every 5 minutes
+python scripts\ingest_aviationstack.py --interval-seconds 300
+```
+
+Required env vars for ingestion:
+
+- `AVIATION_API_KEY`
+- `AVIATION_MONITORED_FLIGHTS` (optional, comma-separated)
+- `AVIATIONSTACK_BASE_URL` (optional)
 
 ## Run Demo Suite
 
@@ -100,6 +151,7 @@ Single section:
 
 ```powershell
 python run_all.py --part 6 --mock
+python run_all.py --part 10 --mock
 ```
 
 ## Launch Dashboard
@@ -118,7 +170,28 @@ docker compose --profile dashboard up dashboard
 
 ## Dashboard Agent + Telemetry
 
-The dashboard writes runtime AI traces to Postgres for auditability and governance.
+## Agent Plugins (Plug-and-Play)
+
+The dashboard now discovers agents from `agents/agent_*.py` at runtime.
+
+Required in each agent file:
+
+- `AGENT_ID`
+- `LABEL`
+- `run_agent_turn(request, context)`
+
+Optional metadata:
+
+- `DESCRIPTION`
+- `PARAMETERS`
+
+Add/remove behavior:
+
+- Add a new file in `agents/` to add an agent profile to the dashboard.
+- Delete/rename the file to remove it.
+- No core dashboard registry edits are required.
+
+The dashboard writes runtime AI traces to Postgres for auditability and governance. The AI Agent tab now uses the exact same multi-hop routing engine as the Multi-Hop Router tab, so decisions are reproducible between conversational and analytical views.
 
 Key tables:
 
@@ -130,7 +203,20 @@ Key tables:
 - `agent_decision_outcome`
 - `agent_model_registry`
 
+Routing v2 tables used for multi-hop planning and governance:
+
+- `capability_catalog`
+- `site_capability`
+- `process_flow`
+- `process_flow_step`
+- `site_lane`
+- `site_operation_capacity`
+- `routing_eval_run`
+- `routing_eval_case_result`
+
 This supports explainability, review actions, and cost/latency/quality monitoring in production.
+
+UI note: both tabs include an alternatives scorecard for side-by-side comparison of path score, time, cost, risk, and capacity pressure.
 
 ## GitHub Workflow Behavior
 
@@ -151,8 +237,8 @@ Use the repo to show both planes in one flow:
 
 1. Open a PR and let eval gates run (governance before merge).
 2. Merge and show deploy workflow outcome (governance at release).
-3. Open dashboard AI Agent tab and make routing decisions (runtime intelligence).
-4. Query telemetry tables to prove traceability and monitoring (post-deploy governance).
+3. Open dashboard Multi-Hop Router tab + AI Agent tab and make routing decisions (runtime intelligence).
+4. Query telemetry + routing eval tables to prove traceability and monitoring (post-deploy governance).
 
 ## Full Runbook
 

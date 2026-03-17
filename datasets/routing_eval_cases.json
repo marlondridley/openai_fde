@@ -1,0 +1,37 @@
+[
+  {
+    "case_id": "AZ_F12_core",
+    "lot_id": "L2603-A12-22",
+    "flow_id": "FLOW_V1_CORE",
+    "expected_feasible": true,
+    "expected_final_sites": []
+  },
+  {
+    "case_id": "AZ_F22_core",
+    "lot_id": "L2603-A22-14",
+    "flow_id": "FLOW_V1_CORE",
+    "expected_feasible": true,
+    "expected_final_sites": []
+  },
+  {
+    "case_id": "IE_F24_core",
+    "lot_id": "L2602-IE24-14",
+    "flow_id": "FLOW_V1_CORE",
+    "expected_feasible": true,
+    "expected_final_sites": []
+  },
+  {
+    "case_id": "IL_F38_core",
+    "lot_id": "L2603-IL38-10",
+    "flow_id": "FLOW_V1_CORE",
+    "expected_feasible": true,
+    "expected_final_sites": []
+  },
+  {
+    "case_id": "CN_DL68_core",
+    "lot_id": "L2603-DL68-65",
+    "flow_id": "FLOW_V1_CORE",
+    "expected_feasible": true,
+    "expected_final_sites": []
+  }
+]
